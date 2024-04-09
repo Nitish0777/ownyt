@@ -18,7 +18,7 @@ export const registerUser = asyncHandler(async (req, res) => {
   if (!email.includes("@") || !email.includes(".")) {
     throw new ApiError(400, "Invalid email address");
   }
-  const existingUser = User.findOne({
+  const existingUser = await User.findOne({
     $or: [{ email }, { username }],
   });
   if (existingUser) {
@@ -35,15 +35,16 @@ export const registerUser = asyncHandler(async (req, res) => {
   if(!avatar || !coverImage){
     throw new ApiError(500, "Something went wrong while uploading images")
   }
-  const user = User.create
+  const user = await User.create
   ({
     fullName,
     avatar: avatar.url,
-    coverImage: coverImage?.url || "",
+    coverImage: coverImage?.url,
     email,
     username:username.toLowerCase(),
     password,
   }) 
+  console.log(user);
   const createdUser = await User.findById(user._id).select("-password -refreshToken -__v");
   if(!createdUser){
     throw new ApiError(500, "Something went wrong while creating user")
