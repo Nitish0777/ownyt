@@ -27,27 +27,30 @@ export const registerUser = asyncHandler(async (req, res) => {
   console.log(req.files);
   const avatarLocalPath = req.files?.avatar?.[0]?.path;
   const coverImageLocalPath = req.files?.coverImage?.[0]?.path;
-  if (!avatarLocalPath || !coverImageLocalPath) {
+  if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar and CoverImage image are required");
   }
-  const avatar = await uploadOnCloudinary(avatarLocalPath)
-  const coverImage = await uploadOnCloudinary(coverImageLocalPath)
-  if(!avatar || !coverImage){
-    throw new ApiError(500, "Something went wrong while uploading images")
+  const avatar = await uploadOnCloudinary(avatarLocalPath);
+  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  if (!avatar ) {
+    throw new ApiError(500, "Something went wrong while uploading images");
   }
-  const user = await User.create
-  ({
+  const user = await User.create({
     fullName,
     avatar: avatar.url,
-    coverImage: coverImage?.url,
+    coverImage: coverImage?.url || "",
     email,
-    username:username.toLowerCase(),
+    username: username.toLowerCase(),
     password,
-  }) 
+  });
   console.log(user);
-  const createdUser = await User.findById(user._id).select("-password -refreshToken -__v");
-  if(!createdUser){
-    throw new ApiError(500, "Something went wrong while creating user")
+  const createdUser = await User.findById(user._id).select(
+    "-password -refreshToken -__v"
+  );
+  if (!createdUser) {
+    throw new ApiError(500, "Something went wrong while creating user");
   }
-  return res.status(201).json(new ApiResponse(201, createdUser, "User registered successfully"));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, createdUser, "User registered successfully"));
 });
