@@ -184,3 +184,63 @@ export const refreshAccessToken = asyncHandler(async (req, res) => {
     throw new ApiError(401, "Unauthorized request", error?.message);
   }
 });
+
+export const changeCurrentPassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+  if (!currentPassword || !newPassword) {
+    throw new ApiError(400, "All fields are required");
+  }
+
+  console.log(req.user);
+  const user = await User.findById(req.user._id);
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+  const isMatch = await user.isPasswordCorrect(currentPassword);
+  if (!isMatch) {
+    throw new ApiError(401, "Invalid credentials");
+  }
+  user.password = newPassword;
+  await user.save({
+    validateBeforeSave: false,
+  });
+  return res
+    .status(200)
+    .json(new ApiResponse(200, {}, "Password changed successfully"));
+});
+
+export const getCurrentUser = asyncHandler(async (req, res) => {
+  console.log(req.user);
+  const user = await User.findById(req.user._id).select(
+    "-password -refreshToken -__v"
+  );
+  if (!user) {
+    throw new ApiError(404, "User not found");
+  }
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "User fetched successfully"));
+});
+
+export const updateAccountDetails = asyncHandler(async (req, res) => {
+  const { fullName, email } = req.body;
+  if (!fullName || !email) {
+    throw new ApiError(400, "All fields are required");
+  }
+  const user = await User.findByIdAndUpdate(
+    req.user?._id,
+    {
+      $set: {
+        fullName,
+        email,
+      },
+    },
+    {
+      new: true,
+    }
+  ).select("-password");
+
+  return res
+    .status(200)
+    .json(new ApiResponse(200, user, "Account details updated successfully"));
+});
